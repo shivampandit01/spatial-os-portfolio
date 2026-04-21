@@ -9,13 +9,22 @@ export default function TRex(props) {
   
   const { scene, animations } = useGLTF('/models/TRex.glb')
   const clone = useMemo(() => SkeletonUtils.clone(scene), [scene])
-  const { actions, names } = useAnimations(animations, group) // 'names' is a helpful auto-list!
+  const { actions, names } = useAnimations(animations, group) 
 
+  // 1. THE FRUSTUM CULLING FIX (Stops the model from disappearing)
   useEffect(() => {
-    // Default to the first animation if no button is clicked
+    scene.traverse((child) => {
+      if (child.isMesh) {
+        child.frustumCulled = false; 
+      }
+    });
+  }, [scene]);
+
+  // 2. THE ANIMATION LOGIC (Restored the missing top half!)
+  useEffect(() => {
+    // We have to define these variables before we can use them
     const defaultAnim = names.length > 0 ? names[0] : null;
     const animToPlay = activeAnimation || defaultAnim;
-
     const action = actions[animToPlay];
 
     if (action) {
@@ -25,7 +34,7 @@ export default function TRex(props) {
       console.log("👉 Copy exactly from this list:", names);
     }
 
-    // React's natural, glitch-free cleanup!
+    // React's natural, glitch-free cleanup
     return () => {
       if (action) {
         action.fadeOut(0.5);
